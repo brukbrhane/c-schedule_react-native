@@ -15,16 +15,16 @@ And that's it! I'll probably update this as it becomes necessary but so far this
 
 ---
 
-## Building WPF
+## Building Windows
 
-This is going to be the somewhat harder job but I'll try and simplify it so you don't have to suffer like I did.
+This is going to be the somewhat harder job but I'll try and simplify it so you don't have to suffer like I did. Before you start though go to [THIS](https://github.com/microsoft/react-native-windows/blob/master/vnext/docs/ConsumingRNW.md) site and perform all the requirements listed on it. You can use that whole webpage to do basically what I have listed down here so do as you please
 
 1. `npm install`
-2. `npm install --save-dev rnpm-plugin-wpf` - We add this in case I haven't already added it to the package.json file. can't help to have it here and it's neccessary right now because I haven't started working on it
-3. `react-native wpf` - This will start the building of the project for WPF.
-4. Once that is done you'll need to navigate to the WPF folder created within the project folder and open the `.sln` file in Visual Studio
-5. Once Visual Studio is opened up on that solution it will probably tell you to install some workloads or whatever it will need to have the project up and running. Let it do that.
-6. Finally after VS is done with all that, make sure that before you run, you change the CPU architechture to run it with to x86 (there are some problems with running x64)
+2. `yarn add rnpm-plugin-windows` - We add this in case I haven't already added it to the package.json file. can't help to have it here and it's neccessary right now because I haven't started working on it
+3. `react-native windows --template vnext` - This will start the building of the project for WPF.
+4. Once that is done you'll need to navigate to the "windows" folder created within the project folder and open the `.sln` file in Visual Studio
+5. Once Visual Studio is opened up on that solution, go back to your command line which is open on the folder and enter in `react-native start`
+6. After all that, make sure that before you run, you change the CPU architechture to run it with to x86 (there are some problems with running x64)
 7. `react-native start`
 8. Start the application within VS in x86 mode and you're good to go!
 
