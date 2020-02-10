@@ -8,6 +8,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "axiom": "^0.1.6",
     "react": "16.8.6",
     "react-native": "^0.60.0-0",
     "react-native-gesture-handler": "^1.5.6",
