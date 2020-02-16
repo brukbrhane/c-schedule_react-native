@@ -1,11 +1,15 @@
 import { createAppContainer, createSwitchNavigator } from 'react-navigation';
-import { Platform} from 'react-native';
+import { Platform, AsyncStorage } from 'react-native';
 import HomeScreen from './src/screens/HomeScreen';
 import ListScreen from './src/screens/ListScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import ScheduleScreen from './src/screens/ScheduleScreen.windows';
 
 console.log(Platform.OS);
+let batch = "";
+batch = AsyncStorage.getItem("@batch");
+console.log(batch);
+
 const navigator = createSwitchNavigator(
   {
     Home: { screen: HomeScreen },
@@ -14,7 +18,7 @@ const navigator = createSwitchNavigator(
     Schedule: { screen: ScheduleScreen },
   },
   {
-    initialRouteName: 'Login',
+    initialRouteName: batch != null ? 'Schedule': 'Login',
     defaultNavigationOptions: {
       title: 'App'
     }
