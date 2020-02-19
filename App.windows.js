@@ -8,7 +8,6 @@ import ScheduleScreen from './src/screens/ScheduleScreen.windows';
 console.log(Platform.OS);
 let batch = "";
 batch = AsyncStorage.getItem("@batch");
-console.log(batch);
 
 const navigator = createSwitchNavigator(
   {

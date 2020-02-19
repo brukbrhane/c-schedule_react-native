@@ -1,13 +1,15 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, Alert, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Alert, FlatList, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import Axios from 'axios';
+import DayViewComponent from '../components/DayViewComponent';
 // import ViewPager from '@react-native-community/viewpager'; TODO: reimplement once support for viewpager has been added to windows.
 
 export default class ScheduleScreen extends Component {
-    state = { batch: "", schedule: [], courses: {} };
+    state = { batch: "", schedule: [], courses: {}, day: "" };
 
     async componentWillMount() {
+        const { navigation } = this.props;
         await this.getSchedule();
         console.log("Mounting ScheduleScreen");
         if (this.state.schedule == null) {
@@ -28,22 +30,52 @@ export default class ScheduleScreen extends Component {
                 });
         } else {
             console.log("Schedule Exists so not downloading");
-            //TODO: THE STRAT will be passing schedule objects like monday and stuff to other componnets and let them handle it
+            console.log(this.state.courses);
+        }
+    }
+
+    onViewableItemsChanged = ({ viewableItems, changed }) => {
+        switch (viewableItems[0] != null ? viewableItems[0].index : -1) {
+            case 0:
+                this.setState({ day: "Monday" });
+                break;
+            case 1:
+                this.setState({ day: "Tuesday" });
+                break;
+            case 2:
+                this.setState({ day: "Wednesday" });
+                break;
+            case 3:
+                this.setState({ day: "Thursday" });
+                break;
+            case 4:
+                this.setState({ day: "Friday" });
+                break;
+            case 5:
+                this.setState({ day: "Saturday" });
+                break;
+            default:
+                //Nothing cause that's just react-native staying buggy
+                break;
         }
     }
 
     render() {
         const { batch, schedule } = this.state;
-        console.log("In render schedule: " + schedule)
         return (
-            <View>
-                <Text>{batch} Not Windows</Text>
+            <View style={{ flex: 1 }}>
+                <Text style={styles.dayStyle}>{this.state.day}</Text>
                 <FlatList
                     data={schedule}
+                    pagingEnabled={true}
+                    horizontal={true}
                     ListEmptyComponent={() => { return <Text>Nothin Yet</Text> }}
                     renderItem={({ item }) => {
-                        return <Text> Hi I'm an item {item.id} </Text>
-                    }} />
+                        return <DayViewComponent day={item} />;
+                    }}
+                    onViewableItemsChanged={this.onViewableItemsChanged}
+                    viewabilityConfig={{ itemVisiblePercentThreshold: 100 }} />
+                <Text style={styles.batchStyle}>{this.state.batch}</Text>
             </View>
         );
 
@@ -60,7 +92,7 @@ export default class ScheduleScreen extends Component {
         schedArr.push(schedObj.thursday);
         schedArr.push(schedObj.friday);
         schedArr.push(schedObj.saturday);
-        for (let i = 0; i < schedArr.length; i++){
+        for (let i = 0; i < schedArr.length; i++) {
             schedArr[i].id = i.toString();
         }
         this.setState({ schedule: schedArr, courses: coursObj, batch: batch });
@@ -73,5 +105,16 @@ export default class ScheduleScreen extends Component {
 const styles = StyleSheet.create({
     viewpagerStyle: {
         flex: 1,
+        justifyContent: "space-evenly",
+    },
+    dayStyle: {
+        fontSize: 30,
+        fontWeight: 'bold',
+        alignSelf: 'center'
+    },
+    batchStyle: {
+        fontSize: 20,
+        fontStyle: 'italic',
+        alignSelf: 'center'
     }
 });
