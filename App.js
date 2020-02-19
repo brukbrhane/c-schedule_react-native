@@ -10,6 +10,10 @@ import ScheduleScreen from './src/screens/ScheduleScreen';
 console.log(Platform.OS);
 
 const batchs = AsyncStorage.getItem("@batch");
+console.log (batchs);
+const getBatch = async () => {
+  return await AsyncStorage.getItem("@batch");
+}
 
 const navigator = createStackNavigator(
   {
@@ -19,7 +23,7 @@ const navigator = createStackNavigator(
     Schedule: ScheduleScreen,
   },
   {
-    initialRouteName: batchs != null ? 'Schedule': 'Login',
+    initialRouteName: getBatch() != null ? 'Schedule': 'Login',
     defaultNavigationOptions: {
       title: 'Class Schedule'
     }

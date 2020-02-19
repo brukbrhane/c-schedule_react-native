@@ -1,7 +1,5 @@
 import React from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
-import Card from './Card';
-import CardSection from './CardSection';
 import Period from './PeriodView';
 
 const DayViewComponent = ({ day }) => {

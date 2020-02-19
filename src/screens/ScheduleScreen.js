@@ -1,18 +1,20 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, Alert, FlatList, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Alert, FlatList, TouchableHighlight, ProgressBarAndroid } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import Axios from 'axios';
 import DayViewComponent from '../components/DayViewComponent';
+import { NavigationActions } from 'react-navigation';
 // import ViewPager from '@react-native-community/viewpager'; TODO: reimplement once support for viewpager has been added to windows.
 
 export default class ScheduleScreen extends Component {
     state = { batch: "", schedule: [], courses: {}, day: "" };
 
-    async componentWillMount() {
+    async componentDidMount() {
         const { navigation } = this.props;
         await this.getSchedule();
         console.log("Mounting ScheduleScreen");
-        if (this.state.schedule == null) {
+        if (this.state.schedule[0] == null) {
+            console.log("Downloading schedule");
             Axios.get("https://class-schedule.herokuapp.com/schedule/get/" + this.state.batch)
                 .then(async response => {
                     console.log(response)
@@ -21,16 +23,18 @@ export default class ScheduleScreen extends Component {
                         const courses = response.data.courses;
                         await AsyncStorage.setItem("@schedule", JSON.stringify(schedule));
                         await AsyncStorage.setItem("@courses", JSON.stringify(courses));
+                        console.log("Finished settings strings");
                     } else {
                         Alert.alert("Not Found", "We could not find the batch.");
                         this.props.navigation.goBack();
                     }
-                    this.setState({ schedule: await AsyncStorage.getItem("@schedule") });
-                    this.setState({ courses: await AsyncStorage.getItem("@courses") });
-                });
+                    await this.getSchedule();
+                }).catch((e) => {
+                    console.log(e.response.data);
+                    console.log(e.status)
+                })
         } else {
             console.log("Schedule Exists so not downloading");
-            console.log(this.state.courses);
         }
     }
 
@@ -69,13 +73,26 @@ export default class ScheduleScreen extends Component {
                     data={schedule}
                     pagingEnabled={true}
                     horizontal={true}
-                    ListEmptyComponent={() => { return <Text>Nothin Yet</Text> }}
+                    ListEmptyComponent={() => { 
+                        return (
+                        <View style={{flexDirection: 'row'}}>
+                        <Text>Loading</Text>
+                        <ProgressBarAndroid />
+                        </View>) }}
                     renderItem={({ item }) => {
                         return <DayViewComponent day={item} />;
                     }}
                     onViewableItemsChanged={this.onViewableItemsChanged}
                     viewabilityConfig={{ itemVisiblePercentThreshold: 100 }} />
-                <Text style={styles.batchStyle}>{this.state.batch}</Text>
+                <View style={styles.batchHolder}>
+                    <Text style={styles.batchStyle}>{this.state.batch}</Text>
+                    <TouchableHighlight
+                        onPress={(e) => {
+                            this.forgetSchedule();
+                        }}>
+                        <Text>Change</Text>
+                    </TouchableHighlight>
+                </View>
             </View>
         );
 
@@ -83,8 +100,19 @@ export default class ScheduleScreen extends Component {
 
     async getSchedule() {
         let batch = await AsyncStorage.getItem("@batch");
-        let schedObj = JSON.parse(await AsyncStorage.getItem("@schedule"));
-        let coursObj = JSON.parse(await AsyncStorage.getItem("@courses"));
+        console.log("Batch: \"" + batch + "\"");
+        if (batch == null){
+            this.props.navigation.replace("Login");
+        }
+        let schedStr = await AsyncStorage.getItem("@schedule");
+        if (schedStr == null) {
+            console.log("Didn't find schedule string");
+            this.setState({ batch: batch });
+            return; 
+        }
+        let crsStr = await AsyncStorage.getItem("@courses");
+        let schedObj = JSON.parse(schedStr);
+        let coursObj = JSON.parse(crsStr);
         let schedArr = [];
         schedArr.push(schedObj.monday);
         schedArr.push(schedObj.tuesday);
@@ -97,6 +125,11 @@ export default class ScheduleScreen extends Component {
         }
         this.setState({ schedule: schedArr, courses: coursObj, batch: batch });
         console.log(this.state.schedule[0]);
+    }
+
+    async forgetSchedule() {
+        await AsyncStorage.clear();
+        this.props.navigation.replace('Login');
     }
 
 }
@@ -112,9 +145,13 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         alignSelf: 'center'
     },
+    batchHolder: {
+        alignContent: 'center',
+        alignSelf: 'center',
+        flexDirection: 'row'
+    },
     batchStyle: {
         fontSize: 20,
         fontStyle: 'italic',
-        alignSelf: 'center'
     }
 });
