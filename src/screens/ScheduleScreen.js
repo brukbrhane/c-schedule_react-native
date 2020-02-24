@@ -7,7 +7,7 @@ import { NavigationActions } from 'react-navigation';
 // import ViewPager from '@react-native-community/viewpager'; TODO: reimplement once support for viewpager has been added to windows.
 
 export default class ScheduleScreen extends Component {
-    state = { batch: "", schedule: [], courses: {}, day: "" };
+    state = { batch: "", schedule: [], courses: [], day: "", isFetching: false, initIndex: 0 };
 
     async componentDidMount() {
         const { navigation } = this.props;
@@ -35,6 +35,7 @@ export default class ScheduleScreen extends Component {
                 })
         } else {
             console.log("Schedule Exists so not downloading");
+            console.log("Day of week: " + new Date().getDay());
         }
     }
 
@@ -71,24 +72,36 @@ export default class ScheduleScreen extends Component {
                 <Text style={styles.dayStyle}>{this.state.day}</Text>
                 <FlatList
                     data={schedule}
+                    ref={(ref) => { this.flatListRef = ref; }}
                     pagingEnabled={true}
                     horizontal={true}
-                    ListEmptyComponent={() => { 
+                    refreshing={this.state.isFetching}
+                    onViewableItemsChanged={this.onViewableItemsChanged}
+                    viewabilityConfig={{ itemVisiblePercentThreshold: 100 }}
+                    initialScrollIndex={this.state.initIndex}
+                    onScrollToIndexFailed={(e) => {
+                        console.log(e);
+                    }}
+                    onRefresh={() => {
+                        //TODO: Alert to confirm whether I want to refersh or not
+                        //FIXME: This function is buggy so fix it
+                        this.setState({ isFetching: true }, () => this.forgetSchedule());
+                    }}
+                    ListEmptyComponent={() => {
                         return (
-                        <View style={{flexDirection: 'row'}}>
-                        <Text>Loading</Text>
-                        <ProgressBarAndroid />
-                        </View>) }}
+                            <View style={{ flexDirection: 'row' }}>
+                                <Text>Loading</Text>
+                                <ProgressBarAndroid />
+                            </View>)
+                    }}
                     renderItem={({ item }) => {
                         return <DayViewComponent day={item} />;
-                    }}
-                    onViewableItemsChanged={this.onViewableItemsChanged}
-                    viewabilityConfig={{ itemVisiblePercentThreshold: 100 }} />
+                    }} />
                 <View style={styles.batchHolder}>
                     <Text style={styles.batchStyle}>{this.state.batch}</Text>
                     <TouchableHighlight
                         onPress={(e) => {
-                            this.forgetSchedule();
+                            this.forgetEverything();
                         }}>
                         <Text>Change</Text>
                     </TouchableHighlight>
@@ -101,14 +114,14 @@ export default class ScheduleScreen extends Component {
     async getSchedule() {
         let batch = await AsyncStorage.getItem("@batch");
         console.log("Batch: \"" + batch + "\"");
-        if (batch == null){
+        if (batch == null) {
             this.props.navigation.replace("Login");
         }
         let schedStr = await AsyncStorage.getItem("@schedule");
         if (schedStr == null) {
             console.log("Didn't find schedule string");
             this.setState({ batch: batch });
-            return; 
+            return;
         }
         let crsStr = await AsyncStorage.getItem("@courses");
         let schedObj = JSON.parse(schedStr);
@@ -121,15 +134,49 @@ export default class ScheduleScreen extends Component {
         schedArr.push(schedObj.friday);
         schedArr.push(schedObj.saturday);
         for (let i = 0; i < schedArr.length; i++) {
-            schedArr[i].id = i.toString();
+            if (schedArr[i].id == null)
+                schedArr[i].id = i.toString();
         }
-        this.setState({ schedule: schedArr, courses: coursObj, batch: batch });
+        this.setState({ schedule: schedArr, courses: coursObj, batch: batch, initIndex: new Date().getDay() - 1 });
         console.log(this.state.schedule[0]);
     }
 
-    async forgetSchedule() {
+    async forgetEverything() {
         await AsyncStorage.clear();
         this.props.navigation.replace('Login');
+    }
+
+    async forgetSchedule() {
+        let tempSched = await AsyncStorage.getItem("@schedule");
+        let tempCourse = await AsyncStorage.getItem("@courses");
+
+        //TODO: Try to not remove
+        await AsyncStorage.removeItem("@schedule");
+        await AsyncStorage.removeItem("@courses");
+
+        Axios.get("https://class-schedule.herokuapp.com/schedule/get/" + this.state.batch)
+            .then(async res => {
+                if (res.data.message == "OK") {
+                    const schedule = response.data.schedule;
+                    const courses = response.data.courses;
+                    await AsyncStorage.setItem("@schedule", JSON.stringify(schedule));
+                    await AsyncStorage.setItem("@courses", JSON.stringify(courses));
+                } else {
+                    Alert.alert("Error", "Did not find the batch so using stale data");
+                    await AsyncStorage.multiSet([['@schedule', tempSched], ["@courses", tempCourse]])
+                }
+                await this.getSchedule();
+            })
+            .catch(async (e) => {
+                console.log(e);
+                Alert.alert("Error", "There was a network error so using stale data");
+                await AsyncStorage.multiSet([["@schedule", tempSched], ["@courses", tempCourse]], async (e) => {
+                    if (e) throw e;
+                    console.log("Refresh schedule failed. Network Error but re-setting schedule and courses was successful\n" + tempSched);
+                    await this.getSchedule();
+                });
+            });
+        this.setState({ isFetching: false });
     }
 
 }

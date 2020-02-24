@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-community/async-storage';
 //import Axios from 'axios';
 
 export default class ScheduleScreen extends Component {
-    state = { batch: "" };
+    state = { batch: "", schedule: [], courses: [] };
 
     async componentWillMount() {
         console.log('Mounting ScheduleScreen for Windows');
