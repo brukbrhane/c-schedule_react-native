@@ -10,7 +10,6 @@ export default class ScheduleScreen extends Component {
     state = { batch: "", schedule: [], courses: [], day: "", isFetching: false, initIndex: 0 };
 
     async componentDidMount() {
-        const { navigation } = this.props;
         await this.getSchedule();
         console.log("Mounting ScheduleScreen");
         if (this.state.schedule[0] == null) {
@@ -66,7 +65,8 @@ export default class ScheduleScreen extends Component {
     }
 
     render() {
-        const { batch, schedule } = this.state;
+        const { initIndex, batch, schedule } = this.state;
+        const { navigation } = this.props;
         return (
             <View style={{ flex: 1 }}>
                 <Text style={styles.dayStyle}>{this.state.day}</Text>
@@ -78,9 +78,11 @@ export default class ScheduleScreen extends Component {
                     refreshing={this.state.isFetching}
                     onViewableItemsChanged={this.onViewableItemsChanged}
                     viewabilityConfig={{ itemVisiblePercentThreshold: 100 }}
-                    initialScrollIndex={this.state.initIndex}
                     onScrollToIndexFailed={(e) => {
+                        console.log("Falied to scroll to index");
                         console.log(e);
+                        if (e.averageItemLength > 0)
+                            this.flatListRef.scrollToIndex({ index: e.index });
                     }}
                     onRefresh={() => {
                         //TODO: Alert to confirm whether I want to refersh or not
@@ -95,8 +97,10 @@ export default class ScheduleScreen extends Component {
                             </View>)
                     }}
                     renderItem={({ item }) => {
+                        //TODO: Move the Day Title to here so you don't have to re-render it all the time
                         return <DayViewComponent day={item} />;
                     }} />
+                {/*initialScrollIndex={initIndex}   TODO: Fix this code cause it's buggy*/}
                 <View style={styles.batchHolder}>
                     <Text style={styles.batchStyle}>{this.state.batch}</Text>
                     <TouchableHighlight
@@ -139,6 +143,7 @@ export default class ScheduleScreen extends Component {
         }
         this.setState({ schedule: schedArr, courses: coursObj, batch: batch, initIndex: new Date().getDay() - 1 });
         console.log(this.state.schedule[0]);
+        this.flatListRef.scrollToIndex({ animated: true, index: this.state.initIndex, viewPosition: 0 });
     }
 
     async forgetEverything() {
