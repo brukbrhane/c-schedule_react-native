@@ -2,10 +2,20 @@ import React, { Component } from 'react';
 import { View, Text, StyleSheet, FlatList, AsyncStorage, Alert, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 // import AsyncStorage from '@react-native-community/async-storage';
 import DayViewComponent from '../components/DayViewComponent';
+import { AppTheme } from 'react-native-windows';
 //import Axios from 'axios';
 
 export default class ScheduleScreen extends Component {
-    state = { batch: "", schedule: [], courses: [], isFetching: false, day: new Date().getDay() > 6 ? 0 : new Date().getDay() - 1 };
+    state = { batch: "", schedule: [], courses: [], isFetching: false, day: new Date().getDay() > 6 ? 0 : new Date().getDay() - 1
+                , currentTheme: AppTheme.currentTheme };
+
+    componentDidMount(){
+        AppTheme.addListener('appThemeChanged', this.onAppThemeChanged);
+    };
+
+    componentWillUnmount(){
+        AppTheme.removeListener('appThemeChanged', this.onAppThemeChanged);
+    }
 
     async componentWillMount() {
         console.log('Mounting ScheduleScreen for Windows');
@@ -39,11 +49,11 @@ export default class ScheduleScreen extends Component {
 
     render() {
         const { batch, schedule, day, isFetching } = this.state;
-        const { dayStyle, textStyle } = styles;
+        const { textStyle } = styles;
 
         return (
             <View>
-                <Text style={textStyle}>{batch} For Windows</Text>
+                <Text style={textStyle}>{batch}</Text>
                 <FlatList
                     ref={(ref) => this.flatListRef = ref}
                     data={schedule}
@@ -69,18 +79,6 @@ export default class ScheduleScreen extends Component {
                         </View>
                         );
                     }} />
-                {/* * NOTE: ScrollView is much less buggy than the FlatList.
-                            - FlatList has an issue where the item is mid transition and just stays there and is misaligned. Stay with ScrollView
-                <ScrollView
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}>
-                    {
-                        this.state.schedule.map((item) => {
-                            return <DayViewComponent day={item} key={item.id} />
-                        })
-                    }
-                </ScrollView> */}
             </View>
         );
     }
@@ -96,7 +94,7 @@ export default class ScheduleScreen extends Component {
         let crsStr = ""
         crsStr = await AsyncStorage.getItem("@courses");
         if (batch == null) {
-            this.props.navigation.replace("Login");
+            this.props.navigation.navigate("Login");
         }
         if (schedStr == null) {
             console.log("Schedule string not found");
@@ -180,12 +178,18 @@ export default class ScheduleScreen extends Component {
         await this.getSchedule();
         this.setState({ isFetching: false });
     }
+
+    onAppThemeChanged = (event) => {
+        const currentTheme = AppTheme.currentTheme;
+        this.setState({currentTheme});
+    };
 }
 
 const styles = StyleSheet.create({
     textStyle: {
+        alignSelf: 'center',
         fontSize: 30,
-        color: 'blue',
+        color: {windowsbrush: AppTheme.currentTheme === 'dark' ? 'SystemAccentColorLight3' : 'SystemAccentColorDark3'},
         fontWeight: 'bold',
     }
 });
