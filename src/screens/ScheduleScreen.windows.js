@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, FlatList, AsyncStorage, Alert, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, AsyncStorage, Alert, ScrollView, ActivityIndicator, Dimensions, Platform } from 'react-native';
 // import AsyncStorage from '@react-native-community/async-storage';
 import DayViewComponent from '../components/DayViewComponent';
 import { AppTheme } from 'react-native-windows';
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     textStyle: {
         alignSelf: 'center',
         fontSize: 30,
-        color: {windowsbrush: AppTheme.currentTheme === 'dark' ? 'SystemAccentColorLight3' : 'SystemAccentColorDark3'},
+        color: Platform.OS === "windows" ? {windowsbrush: AppTheme.currentTheme === 'dark' ? 'SystemAccentColorLight3' : 'SystemAccentColorDark3'}: "blue",
         fontWeight: 'bold',
     }
 });

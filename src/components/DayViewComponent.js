@@ -3,7 +3,7 @@ import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import Period from './PeriodView';
 
 const DayViewComponent = ({ day, dayNum }) => {
-    const { dayStyle } = styles;
+    const { dayStyle, containerStyle } = styles;
 
     let dayStr = "";
     console.log("INdex: " + dayNum)
@@ -32,7 +32,7 @@ const DayViewComponent = ({ day, dayNum }) => {
     }
 
     return (
-        <ScrollView>
+        <ScrollView style={containerStyle}>
             <Text style={dayStyle}>{dayStr}</Text>
             <Period title={day.firstPeriod.Title} room={day.firstPeriod.Room} time="08:00-10:00" />
             <Period title={day.secondPeriod.Title} room={day.secondPeriod.Room} time="10:00-12:00" />
@@ -46,8 +46,6 @@ const DayViewComponent = ({ day, dayNum }) => {
 
 const styles = StyleSheet.create({
     containerStyle: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
         paddingBottom: 20,
         paddingTop: 20
     },

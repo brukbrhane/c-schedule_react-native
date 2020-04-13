@@ -17,11 +17,12 @@ const styles = StyleSheet.create({
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowRadius: 1,
         elevation: 5,
         marginLeft: 5,
         marginRight: 5,
         marginTop: 5,
+        marginBottom: 5,
         justifyContent: 'center',
     }
 });

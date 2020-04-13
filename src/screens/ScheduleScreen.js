@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, Alert, FlatList, TouchableHighlight, ProgressBarAndroid } from 'react-native';
+import { View, Text, StyleSheet, Alert, FlatList, TouchableHighlight, ProgressBarAndroid, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import Axios from 'axios';
 import DayViewComponent from '../components/DayViewComponent';
@@ -7,7 +7,8 @@ import { NavigationActions } from 'react-navigation';
 // import ViewPager from '@react-native-community/viewpager'; TODO: reimplement once support for viewpager has been added to windows.
 
 export default class ScheduleScreen extends Component {
-    state = { batch: "", schedule: [], courses: [], day: "", isFetching: false, initIndex: 0 };
+    state = { batch: "", schedule: [], courses: [], day: new Date().getDay() > 6 ? 0 : new Date().getDay() - 1, 
+                isFetching: false };
 
     async componentDidMount() {
         await this.getSchedule();
@@ -38,52 +39,19 @@ export default class ScheduleScreen extends Component {
         }
     }
 
-    onViewableItemsChanged = ({ viewableItems, changed }) => {
-        switch (viewableItems[0] != null ? viewableItems[0].index : -1) {
-            case 0:
-                this.setState({ day: "Monday" });
-                break;
-            case 1:
-                this.setState({ day: "Tuesday" });
-                break;
-            case 2:
-                this.setState({ day: "Wednesday" });
-                break;
-            case 3:
-                this.setState({ day: "Thursday" });
-                break;
-            case 4:
-                this.setState({ day: "Friday" });
-                break;
-            case 5:
-                this.setState({ day: "Saturday" });
-                break;
-            default:
-                //Nothing cause that's just react-native staying buggy
-                break;
-        }
-    }
-
     render() {
-        const { initIndex, batch, schedule } = this.state;
+        const { batch, schedule, day } = this.state;
         const { navigation } = this.props;
         return (
             <View style={{ flex: 1 }}>
-                <Text style={styles.dayStyle}>{this.state.day}</Text>
                 <FlatList
                     data={schedule}
                     ref={(ref) => { this.flatListRef = ref; }}
                     pagingEnabled={true}
                     horizontal={true}
                     refreshing={this.state.isFetching}
-                    onViewableItemsChanged={this.onViewableItemsChanged}
-                    viewabilityConfig={{ itemVisiblePercentThreshold: 100 }}
-                    onScrollToIndexFailed={(e) => {
-                        console.log("Falied to scroll to index");
-                        console.log(e);
-                        if (e.averageItemLength > 0)
-                            this.flatListRef.scrollToIndex({ index: e.index });
-                    }}
+                    initialScrollIndex={day}
+                    getItemLayout={(data, index) => ({ length: Dimensions.get('window').width - 10, offset: (Dimensions.get('window').width) * index, index })}
                     onRefresh={() => {
                         //TODO: Alert to confirm whether I want to refersh or not
                         //FIXME: This function is buggy so fix it
@@ -96,9 +64,9 @@ export default class ScheduleScreen extends Component {
                                 <ProgressBarAndroid />
                             </View>)
                     }}
-                    renderItem={({ item }) => {
+                    renderItem={({ item , index}) => {
                         //TODO: Move the Day Title to here so you don't have to re-render it all the time
-                        return <DayViewComponent day={item} />;
+                        return <DayViewComponent day={item} dayNum={index} />;
                     }} />
                 {/*initialScrollIndex={initIndex}   TODO: Fix this code cause it's buggy*/}
                 <View style={styles.batchHolder}>
@@ -141,9 +109,8 @@ export default class ScheduleScreen extends Component {
             if (schedArr[i].id == null)
                 schedArr[i].id = i.toString();
         }
-        this.setState({ schedule: schedArr, courses: coursObj, batch: batch, initIndex: new Date().getDay() - 1 });
+        this.setState({ schedule: schedArr, courses: coursObj, batch: batch});
         console.log(this.state.schedule[0]);
-        this.flatListRef.scrollToIndex({ animated: true, index: this.state.initIndex, viewPosition: 0 });
     }
 
     async forgetEverything() {
@@ -164,8 +131,9 @@ export default class ScheduleScreen extends Component {
                 if (res.data.message == "OK") {
                     const schedule = response.data.schedule;
                     const courses = response.data.courses;
-                    await AsyncStorage.setItem("@schedule", JSON.stringify(schedule));
-                    await AsyncStorage.setItem("@courses", JSON.stringify(courses));
+                    await AsyncStorage.multiSet([["@schedule", JSON.stringify(schedule)], 
+                        ["@courses", JSON.stringify(courses)]]);
+                    console.log("Finished downloading and saving scheudle");
                 } else {
                     Alert.alert("Error", "Did not find the batch so using stale data");
                     await AsyncStorage.multiSet([['@schedule', tempSched], ["@courses", tempCourse]])
@@ -191,11 +159,6 @@ const styles = StyleSheet.create({
     viewpagerStyle: {
         flex: 1,
         justifyContent: "space-evenly",
-    },
-    dayStyle: {
-        fontSize: 30,
-        fontWeight: 'bold',
-        alignSelf: 'center'
     },
     batchHolder: {
         alignContent: 'center',
