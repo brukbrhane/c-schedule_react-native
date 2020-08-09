@@ -1,12 +1,8 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, AsyncStorage } from 'react-native';
-// import AsyncStorage from '@react-native-community/async-storage';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
 
 export default class LoginScreen extends Component {
-
-    componentWillMount() {
-        console.log("Mounting LoginScreen");
-    }
 
     async componentDidMount() {
         this.setState({ batch: await AsyncStorage.getItem("@batch") });
